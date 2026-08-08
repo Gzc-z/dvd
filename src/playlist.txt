@@ -1,0 +1,30 @@
+import java.util.ArrayList;
+
+public class Playlist {
+    private int id;
+    private Song getName;
+    private ArrayList<Song> songs;
+
+
+    public Playlist(int id, String name){
+        this.id = id;
+        this.name = name;
+        songs = new ArrayList<>();
+    }
+    public int getId(){return id;}
+    public String getName(){return name;}
+
+    public boolean addSong(Song song){
+        if (song == null) return false; //  Se o valor não for válido retorna "false"
+
+        for (Song s : songs){   //  Compara se o id da musica nova é igual de alguma outra musica
+            if (s.getId() == song.getId()){
+                return false;
+            }
+        }
+        songs.add(song);
+        return true;
+    }
+    public boolean removeSongByID(int songID){return true;}  //  não consegui fazer
+
+}
