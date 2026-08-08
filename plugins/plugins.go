@@ -2,6 +2,7 @@
 package plugins
 
 import (
+	"image/color"
 	"math/rand"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -31,10 +32,21 @@ type Image struct {
 	Size float64
 
 	Texture rl.Texture2D
+	Image   *rl.Image
+
+	Color color.RGBA
 }
 
-func LoadImage(i *Image) *Image {
-	image := rl.LoadImage(i.Path)
+func (i *Image) LoadImage() {
+	i.Image = rl.LoadImageFromTexture(i.Texture)
+}
+
+func (i *Image) LoadTexture() {
+	i.Texture = rl.LoadTextureFromImage(i.Image)
+}
+
+func GetImage(i *Image) *Image {
+	i.Image = rl.LoadImage(i.Path)
 
 	if i.Size == 0 {
 		i.Size = 1
@@ -45,35 +57,39 @@ func LoadImage(i *Image) *Image {
 	if i.W != 0 {
 		w = int32(float64(i.W) * i.Size)
 	} else {
-		w = int32(float64(image.Width) * i.Size)
+		w = int32(float64(i.Image.Width) * i.Size)
 	}
 
 	if i.H != 0 {
 		h = int32(float64(i.H) * i.Size)
 	} else {
-		h = int32(float64(image.Height) * i.Size)
+		h = int32(float64(i.Image.Height) * i.Size)
 	}
 
-	rl.ImageResize(image, w, h)
-	i.Texture = rl.LoadTextureFromImage(image)
-	rl.UnloadImage(image)
+	rl.ImageResize(i.Image, w, h)
+	i.Texture = rl.LoadTextureFromImage(i.Image)
+	rl.UnloadImage(i.Image)
 	return i
-}
-
-func Movement(i *Image) {
-	moveX(i)
-	moveY(i)
 }
 
 func Grid() {
 	ggap := 20
 	gap := 10
 	for i := range rl.GetScreenHeight()/ggap + gap {
-		rl.DrawLine(int32(gap*-1), int32(i*ggap), int32(rl.GetScreenWidth()), int32(i*ggap), rl.Black)
+		rl.DrawLine(int32(gap*-1), int32(i*ggap), int32(rl.GetScreenWidth()), int32(i*ggap), rl.White)
 	}
 	for i := range rl.GetScreenWidth()/ggap + gap {
-		rl.DrawLine(int32(i*ggap), int32(gap*-1), int32(i*ggap), int32(rl.GetScreenHeight()), rl.Black)
+		rl.DrawLine(int32(i*ggap), int32(gap*-1), int32(i*ggap), int32(rl.GetScreenHeight()), rl.White)
 	}
+}
+
+func Color(i *Image) {
+	i.Color = randomColor()
+}
+
+func Movement(i *Image) {
+	moveX(i)
+	moveY(i)
 }
 
 func moveY(i *Image) {
@@ -102,6 +118,13 @@ func moveX(i *Image) {
 	i.PosX -= i.Speed
 }
 
-func randomColor() int {
-	return rand.Intn(0xffffff)
+func randomColor() color.RGBA {
+	color := color.RGBA{
+		R: uint8(rand.Intn(0xFF)),
+		G: uint8(rand.Intn(0xFF)),
+		B: uint8(rand.Intn(0xFF)),
+		A: uint8(rand.Intn(0xFF)),
+	}
+	// fmt.Printf("%#v\n", color)
+	return color
 }
