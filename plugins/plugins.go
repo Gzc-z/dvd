@@ -4,14 +4,22 @@ package plugins
 import (
 	"image/color"
 	"math/rand"
+	"sync"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 type Plugin struct {
-	Name   string
+	Name string
+
+	// its false by default
 	Enable bool
-	Fn     func()
+
+	// redirect the function to your plugin
+	//
+	// u can make this with anonynmous function
+	// func() { ... }
+	Fn func()
 }
 
 // Image is a configuration for NewImage()
@@ -35,6 +43,7 @@ type Image struct {
 	Image   *rl.Image
 
 	Color color.RGBA
+	Mu    sync.Mutex
 }
 
 func (i *Image) LoadImage() {
@@ -72,19 +81,49 @@ func GetImage(i *Image) *Image {
 	return i
 }
 
-func Grid() {
-	ggap := 20
-	gap := 10
-	for i := range rl.GetScreenHeight()/ggap + gap {
-		rl.DrawLine(int32(gap*-1), int32(i*ggap), int32(rl.GetScreenWidth()), int32(i*ggap), rl.White)
+var (
+	// ##[Grid]
+	gridSize = 30
+
+	// dont use nevative values
+	offboard = 20
+)
+
+// Grid draws a grid on the screen
+func Grid(customOffboard ...int) {
+	if customOffboard != nil {
+		offboard = customOffboard[0]
 	}
-	for i := range rl.GetScreenWidth()/ggap + gap {
-		rl.DrawLine(int32(i*ggap), int32(gap*-1), int32(i*ggap), int32(rl.GetScreenHeight()), rl.White)
+
+	height := rl.GetScreenHeight()
+	width := rl.GetScreenWidth()
+
+	// horizontal lines
+	for i := range height/gridSize + offboard {
+		rl.DrawLine(
+			int32(-offboard),      // <- (startPosX)
+			int32(i*gridSize),     // <- (startPosY)
+			int32(width+offboard), // <- (endPosX)
+			int32(i*gridSize),     // <- (endPosY)
+			rl.White,
+		)
+	}
+	// vertical lines
+	for i := range width/gridSize + offboard {
+		rl.DrawLine(
+			int32(i*gridSize),      // <- (startPosX)
+			int32(-offboard),       // <- (startPosY)
+			int32(i*gridSize),      // <- (endPosX)
+			int32(height+offboard), // <- (endPosY)
+			rl.White,
+		)
 	}
 }
 
 func Color(i *Image) {
+	i.Mu.Lock()
 	i.Color = randomColor()
+	i.Mu.Unlock()
 }
 
 func Movement(i *Image) {
@@ -93,7 +132,8 @@ func Movement(i *Image) {
 }
 
 func moveY(i *Image) {
-	if i.PosY > float32(rl.GetScreenHeight())-float32(i.Texture.Height) {
+	hLimit := float32(int32(rl.GetScreenHeight()) - i.Texture.Height)
+	if i.PosY > hLimit && !i.faceD {
 		i.faceD = !i.faceD
 	} else if i.PosY < 0 && i.faceD {
 		i.faceD = !i.faceD
@@ -106,7 +146,8 @@ func moveY(i *Image) {
 }
 
 func moveX(i *Image) {
-	if i.PosX > float32(rl.GetScreenWidth())-float32(i.Texture.Width) {
+	wLimit := float32(int32(rl.GetScreenWidth()) - i.Texture.Width)
+	if i.PosX > wLimit && !i.faceR {
 		i.faceR = !i.faceR
 	} else if i.PosX < 0 && i.faceR {
 		i.faceR = !i.faceR
@@ -123,7 +164,7 @@ func randomColor() color.RGBA {
 		R: uint8(rand.Intn(0xFF)),
 		G: uint8(rand.Intn(0xFF)),
 		B: uint8(rand.Intn(0xFF)),
-		A: uint8(rand.Intn(0xFF)),
+		A: 0xff,
 	}
 	// fmt.Printf("%#v\n", color)
 	return color

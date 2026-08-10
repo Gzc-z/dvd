@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"sync"
 
 	"main/plugins"
 
@@ -21,17 +22,47 @@ type frame struct {
 	x, y int
 }
 
+// ##[plugins.Plugin]
 type plugin struct {
-	Enabled bool
-	Fn      func()
+	Name string
+
+	// false by default
+	// you must to enable to run with: ##[loadPlugins]
+	Enabled bool // false
+
+	// redirect the function to your plugin
+	//
+	// u can make this with anonynmous function
+	//
+	// with opitional concurrency :)
+	//
+	// go func() { ... }
+	Fn func()
 }
 
-func loadPlugins() {
+func stdPlugins() {
 	for _, p := range plugMap {
 		if p.Enabled {
 			p.Fn()
 		}
 	}
+}
+
+func pluginByName(name string) {
+	for i, p := range plugMap {
+		if name == i {
+			p.Fn()
+			return
+		}
+	}
+}
+
+func loadPlugins(name ...string) {
+	if len(name) == 0 {
+		stdPlugins()
+		return
+	}
+	pluginByName(name[0])
 }
 
 func initWindow(ctx chan<- os.Signal) {
@@ -52,12 +83,17 @@ func initWindow(ctx chan<- os.Signal) {
 			Size:  .2,
 			Path:  "assets/DVD.png",
 			Color: rl.White,
+			Mu:    sync.Mutex{},
 		},
 	)
+	// TODO: create wrapper func like Fn() in plugin's package
+	// to control settings
 	plugMap = map[string]*plugin{
 		"Grid": {
 			Enabled: false,
-			Fn:      plugins.Grid,
+			Fn: func() {
+				plugins.Grid()
+			},
 		},
 		"Movement": {
 			Enabled: true,
@@ -65,13 +101,23 @@ func initWindow(ctx chan<- os.Signal) {
 		},
 		"Color": {
 			Enabled: false,
-			Fn:      func() { plugins.Color(image) },
+			Fn: func() {
+				plugins.Color(image)
+			},
 		},
 	}
+
+	var timer float64
 
 	rl.SetTargetFPS(TargetFPS)
 	rl.SetExitKey(rl.KeyQ)
 	for !rl.WindowShouldClose() {
+		timer += float64(rl.GetFrameTime())
+		if timer >= .3 {
+			timer = 0
+			loadPlugins("Color")
+		}
+
 		image.Speed = speed * rl.GetFrameTime()
 		rl.BeginDrawing()
 
