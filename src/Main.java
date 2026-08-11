@@ -3,7 +3,7 @@ public class Main {
         Song song = new Song(
                 1,
                 "Minha Música",
-                "assets/Song1.wav"
+                "../assets/Song1.wav"
         );
 
         Player player = new Player();
