@@ -4,7 +4,7 @@ SOURCE_SONG=src/*.java
 dvd:
 	@go run .
 
-song:
+build-song:
 	@javac -d $(BIN) $(SOURCE_SONG)
 
 clean:

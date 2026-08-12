@@ -81,7 +81,7 @@ func initWindow(ctx chan<- os.Signal) {
 	image := plugins.GetImage(
 		&plugins.Image{
 			Size:  .2,
-			Path:  "assets/DVD.png",
+			Path:  "../assets/DVD.png",
 			Color: rl.White,
 			Mu:    sync.Mutex{},
 		},
