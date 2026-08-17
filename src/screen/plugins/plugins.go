@@ -25,6 +25,7 @@ type Plugin struct {
 // Image is a configuration for NewImage()
 // TODO: add comments
 type Image struct {
+	Name       string
 	PosX, PosY float32
 	W, H       int32
 
@@ -120,10 +121,16 @@ func Grid(customOffboard ...int) {
 	}
 }
 
+var timer float64
+
 func Color(i *Image) {
-	i.Mu.Lock()
-	i.Color = randomColor()
-	i.Mu.Unlock()
+	timer += float64(rl.GetFrameTime())
+	if timer >= .1 {
+		timer = 0
+		i.Mu.Lock()
+		i.Color = randomColor()
+		i.Mu.Unlock()
+	}
 }
 
 func Movement(i *Image) {

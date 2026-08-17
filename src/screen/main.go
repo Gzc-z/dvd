@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	TargetFPS int32   = 256
+	TargetFPS int32   = 0
 	movFactor         = rl.GetFrameTime() * speed
 	speed     float32 = 300
 
@@ -80,6 +80,7 @@ func initWindow(ctx chan<- os.Signal) {
 	defer rl.CloseWindow()
 	image := plugins.GetImage(
 		&plugins.Image{
+			Name:  "DVD",
 			Size:  .2,
 			Path:  "../assets/DVD.png",
 			Color: rl.White,
@@ -91,9 +92,7 @@ func initWindow(ctx chan<- os.Signal) {
 	plugMap = map[string]*plugin{
 		"Grid": {
 			Enabled: false,
-			Fn: func() {
-				plugins.Grid()
-			},
+			Fn:      func() { plugins.Grid() },
 		},
 		"Movement": {
 			Enabled: true,
@@ -101,23 +100,13 @@ func initWindow(ctx chan<- os.Signal) {
 		},
 		"Color": {
 			Enabled: false,
-			Fn: func() {
-				plugins.Color(image)
-			},
+			Fn:      func() { plugins.Color(image) },
 		},
 	}
-
-	var timer float64
 
 	rl.SetTargetFPS(TargetFPS)
 	rl.SetExitKey(rl.KeyQ)
 	for !rl.WindowShouldClose() {
-		timer += float64(rl.GetFrameTime())
-		if timer >= .3 {
-			timer = 0
-			loadPlugins("Color")
-		}
-
 		image.Speed = speed * rl.GetFrameTime()
 		rl.BeginDrawing()
 
@@ -130,11 +119,15 @@ func initWindow(ctx chan<- os.Signal) {
 		if rl.IsKeyPressed(rl.KeyC) {
 			plugMap["Color"].Enabled = !plugMap["Color"].Enabled
 		}
+		if rl.IsKeyPressed(rl.KeyM) {
+			plugMap["Movement"].Enabled = !plugMap["Movement"].Enabled
+		}
 		if !plugMap["Color"].Enabled {
 			image.Color = rl.White
 		}
 		loadPlugins()
 		rl.DrawTexture(image.Texture, int32(image.PosX), int32(image.PosY), image.Color)
+		// rl.DrawTexture(image2.Texture, int32(image2.PosX), int32(image2.PosY), image2.Color)
 
 		rl.EndDrawing()
 	}
